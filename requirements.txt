@@ -3,3 +3,5 @@ nvidia-ml-py; python_version <= '2.7'
 nvidia-ml-py3; python_version >= '3.0'
 psutil
 blessings>=1.6
+grpcio==1.21.1
+grpcio-tools==1.21.1

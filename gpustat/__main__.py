@@ -37,6 +37,26 @@ def print_gpustat(json=False, debug=False, **kwargs):
         gpu_stats.print_formatted(sys.stdout, **kwargs)
 
 
+def run_cilent_reporter(debug=False, **kwargs):
+    try:
+        gpu_stats = GPUStatCollection.new_query()
+    except Exception as e:
+        sys.stderr.write('Error on querying NVIDIA devices.'
+                         ' Use --debug flag for details\n')
+        if debug:
+            try:
+                import traceback
+                traceback.print_exc(file=sys.stderr)
+            except Exception:
+                # NVMLError can't be processed by traceback:
+                #   https://bugs.python.org/issue28603
+                # as a workaround, simply re-throw the exception
+                raise e
+        sys.exit(1)
+
+    gpu_stats.run_client_print(**kwargs)
+
+
 def loop_gpustat(interval=1.0, **kwargs):
     term = Terminal()
 
@@ -85,6 +105,8 @@ def main(*argv):
                         help='Print all the information in JSON format')
     parser.add_argument('-v', '--version', action='version',
                         version=('gpustat %s' % __version__))
+    parser.add_argument('-r', '--report', type=str, default="",
+                        help='Report GPU Info to host. ')
     parser.add_argument(
         '-P', '--show-power', nargs='?', const='draw,limit',
         choices=['', 'draw', 'limit', 'draw,limit', 'limit,draw'],
@@ -108,18 +130,24 @@ def main(*argv):
     )
     args = parser.parse_args(argv[1:])
 
-    if args.interval is None:  # with default value
-        args.interval = 1.0
-    if args.interval > 0:
-        args.interval = max(0.1, args.interval)
-        if args.json:
-            sys.stderr.write("Error: --json and --interval/-i can't be used together.\n")  # noqa
-            sys.exit(1)
 
-        loop_gpustat(**vars(args))
+    if args.report:
+        run_cilent_reporter(**vars(args))
     else:
-        del args.interval
-        print_gpustat(**vars(args))
+        if args.interval is None:  # with default value
+            args.interval = 1.0
+        if args.interval > 0:
+            args.interval = max(0.1, args.interval)
+            if args.json:
+                sys.stderr.write("Error: --json and --interval/-i can't be used together.\n")  # noqa
+                sys.exit(1)
+
+            loop_gpustat(**vars(args))
+        else:
+            del args.interval
+            print_gpustat(**vars(args))
+
+
 
 
 if __name__ == '__main__':

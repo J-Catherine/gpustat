@@ -11,14 +11,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import grpc
 import json
 import locale
 import os.path
 import platform
 import sys
+import time
 from datetime import datetime
 
 from six.moves import cStringIO as StringIO
+from .W_pb2 import ServerRequest
+from .W_pb2_grpc import gRPCStub
 
 import psutil
 import pynvml as N
@@ -27,6 +31,7 @@ from blessings import Terminal
 NOT_SUPPORTED = 'Not Supported'
 MB = 1024 * 1024
 
+_PORT = '8188'
 
 class GPUStat(object):
 
@@ -254,6 +259,31 @@ class GPUStat(object):
         fp.write(reps)
         return fp
 
+    def run_client(self, host):
+        with grpc.insecure_channel(host + ':' + _PORT) as conn:
+            for _ in range(100):
+                client = gRPCStub(channel=conn)
+                response = client.GetMessage(ServerRequest(
+                    cards=[ServerRequest.Card(
+                        gpu_name=self.name,
+                        index=self.index,
+                        temperature=self.temperature,
+                        fan_speed=self.fan_speed,
+                        memory_used=self.memory_used,
+                        memory_total=self.memory_total,
+                        utilization=self.utilization,
+                        uuid=self.uuid,
+                        process=[ServerRequest.Card.Process(
+                            username=each['username'],
+                            command=each['command'],
+                            gpu_memory_usage=each['gpu_memory_usage'],
+                            pid=each['pid'],
+                        ) for each in self.processes]
+                    )]
+                ))
+                print("received: " + response.success)
+                time.sleep(60)
+
     def jsonify(self):
         o = dict(self.entry)
         if self.entry['processes'] is not None:
@@ -427,7 +457,7 @@ class GPUStatCollection(object):
                         show_cmd=False, show_user=False, show_pid=False,
                         show_power=None, show_fan_speed=None, gpuname_width=16,
                         show_header=True,
-                        eol_char=os.linesep,
+                        eol_char=os.linesep, **kwargs
                         ):
         # ANSI color configuration
         if force_color and no_color:
@@ -500,6 +530,12 @@ class GPUStatCollection(object):
                   default=date_handler)
         fp.write('\n')
         fp.flush()
+
+
+    def run_client_print(self, **kwargs):
+        host = kwargs['report']
+        for g in self:
+            g.run_client(host)
 
 
 def new_query():
