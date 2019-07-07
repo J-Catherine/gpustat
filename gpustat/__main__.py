@@ -106,7 +106,7 @@ def main(*argv):
     parser.add_argument('-v', '--version', action='version',
                         version=('gpustat %s' % __version__))
     parser.add_argument('-r', '--report', type=str, default="",
-                        help='Report GPU Info to host. ')
+                        help='Report GPU Info to server. ')
     parser.add_argument(
         '-P', '--show-power', nargs='?', const='draw,limit',
         choices=['', 'draw', 'limit', 'draw,limit', 'limit,draw'],
@@ -130,7 +130,6 @@ def main(*argv):
     )
     args = parser.parse_args(argv[1:])
 
-
     if args.report:
         run_cilent_reporter(**vars(args))
     else:
@@ -146,8 +145,6 @@ def main(*argv):
         else:
             del args.interval
             print_gpustat(**vars(args))
-
-
 
 
 if __name__ == '__main__':

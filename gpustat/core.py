@@ -259,31 +259,6 @@ class GPUStat(object):
         fp.write(reps)
         return fp
 
-    def run_client(self, host):
-        with grpc.insecure_channel(host + ':' + _PORT) as conn:
-            for _ in range(100):
-                client = gRPCStub(channel=conn)
-                response = client.GetMessage(ServerRequest(
-                    cards=[ServerRequest.Card(
-                        gpu_name=self.name,
-                        index=self.index,
-                        temperature=self.temperature,
-                        fan_speed=self.fan_speed,
-                        memory_used=self.memory_used,
-                        memory_total=self.memory_total,
-                        utilization=self.utilization,
-                        uuid=self.uuid,
-                        process=[ServerRequest.Card.Process(
-                            username=each['username'],
-                            command=each['command'],
-                            gpu_memory_usage=each['gpu_memory_usage'],
-                            pid=each['pid'],
-                        ) for each in self.processes]
-                    )]
-                ))
-                print("received: " + response.success)
-                time.sleep(60)
-
     def jsonify(self):
         o = dict(self.entry)
         if self.entry['processes'] is not None:
@@ -533,9 +508,30 @@ class GPUStatCollection(object):
 
 
     def run_client_print(self, **kwargs):
-        host = kwargs['report']
-        for g in self:
-            g.run_client(host)
+        server = kwargs['report']
+        with grpc.insecure_channel(server + ':' + _PORT) as conn:
+            client = gRPCStub(channel=conn)
+            while 1:
+                response = client.GetMessage(ServerRequest(
+                    cards=[ServerRequest.Card(
+                        gpu_name=g.name,
+                        index=g.index,
+                        temperature=g.temperature,
+                        fan_speed=g.fan_speed,
+                        memory_used=g.memory_used,
+                        memory_total=g.memory_total,
+                        utilization=g.utilization,
+                        uuid=g.uuid,
+                        process=[ServerRequest.Card.Process(
+                            username=p['username'],
+                            command=p['command'],
+                            gpu_memory_usage=p['gpu_memory_usage'],
+                            pid=p['pid'],
+                        ) for p in g.processes]
+                    ) for g in self]
+                ))
+                print("received: " + response.success)
+                time.sleep(60)
 
 
 def new_query():
