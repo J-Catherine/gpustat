@@ -32,6 +32,7 @@ Options:
 * `-P`, `--show-power` : Display GPU power usage and/or limit (`draw` or `draw,limit`)
 * `--watch`, `-i`, `--interval`   : Run in watch mode (equivalent to `watch gpustat`) if given. Denotes interval between updates. ([#41][gh-issue-41])
 * `--json`             : JSON Output (Experimental, [#10][gh-issue-10])
+* `--report`, `-r`     : Report GPU information to [server](https://github.com/J-Catherine/GPUInfoCollector/tree/master/grpc_server) by grpc.
 
 ### Tips
 
