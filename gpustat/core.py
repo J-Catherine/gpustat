@@ -511,27 +511,26 @@ class GPUStatCollection(object):
         server = kwargs['report']
         with grpc.insecure_channel(server + ':' + _PORT) as conn:
             client = gRPCStub(channel=conn)
-            while 1:
-                response = client.GetMessage(ServerRequest(
-                    cards=[ServerRequest.Card(
-                        gpu_name=g.name,
-                        index=g.index,
-                        temperature=g.temperature,
-                        fan_speed=g.fan_speed,
-                        memory_used=g.memory_used,
-                        memory_total=g.memory_total,
-                        utilization=g.utilization,
-                        uuid=g.uuid,
-                        process=[ServerRequest.Card.Process(
-                            username=p['username'],
-                            command=p['command'],
-                            gpu_memory_usage=p['gpu_memory_usage'],
-                            pid=p['pid'],
-                        ) for p in g.processes]
-                    ) for g in self]
-                ))
-                print("received: " + response.success)
-                time.sleep(60)
+            response = client.GetMessage(ServerRequest(
+                cards=[ServerRequest.Card(
+                    gpu_name=g.name,
+                    index=g.index,
+                    temperature=g.temperature,
+                    fan_speed=g.fan_speed,
+                    memory_used=g.memory_used,
+                    memory_total=g.memory_total,
+                    utilization=g.utilization,
+                    uuid=g.uuid,
+                    process=[ServerRequest.Card.Process(
+                        username=p['username'],
+                        command=p['command'],
+                        gpu_memory_usage=p['gpu_memory_usage'],
+                        pid=p['pid'],
+                    ) for p in g.processes]
+                ) for g in self]
+            ))
+            print("received: " + response.success)
+
 
 
 def new_query():

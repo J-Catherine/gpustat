@@ -38,23 +38,25 @@ def print_gpustat(json=False, debug=False, **kwargs):
 
 
 def run_cilent_reporter(debug=False, **kwargs):
-    try:
-        gpu_stats = GPUStatCollection.new_query()
-    except Exception as e:
-        sys.stderr.write('Error on querying NVIDIA devices.'
-                         ' Use --debug flag for details\n')
-        if debug:
-            try:
-                import traceback
-                traceback.print_exc(file=sys.stderr)
-            except Exception:
-                # NVMLError can't be processed by traceback:
-                #   https://bugs.python.org/issue28603
-                # as a workaround, simply re-throw the exception
-                raise e
-        sys.exit(1)
-
-    gpu_stats.run_client_print(**kwargs)
+    while 1:
+        try:
+            gpu_stats = GPUStatCollection.new_query()
+        except Exception as e:
+            sys.stderr.write('Error on querying NVIDIA devices.'
+                             ' Use --debug flag for details\n')
+            if debug:
+                try:
+                    import traceback
+                    traceback.print_exc(file=sys.stderr)
+                except Exception:
+                    # NVMLError can't be processed by traceback:
+                    #   https://bugs.python.org/issue28603
+                    # as a workaround, simply re-throw the exception
+                    raise e
+            sys.exit(1)
+    
+        gpu_stats.run_client_print(**kwargs)
+        time.sleep(45)
 
 
 def loop_gpustat(interval=1.0, **kwargs):
